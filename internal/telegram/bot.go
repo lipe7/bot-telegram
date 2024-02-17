@@ -59,6 +59,21 @@ func (b *Bot) Run() {
 			continue
 		}
 
+		// Verificar se a mensagem é um comando
+		if update.Message.IsCommand() {
+			previousGroup := os.Getenv("PROMO_GROUP_ID") // Obter o valor anterior do env
+
+			// Atribuir o novo valor com o prefixo ao env PROMO_GROUP_ID
+			commandWithPrefix := "-100" + update.Message.CommandWithAt()
+			os.Setenv("PROMO_GROUP_ID", commandWithPrefix)
+
+			newGroup := os.Getenv("PROMO_GROUP_ID") // Obter o novo valor do env após atualizar
+
+			// Imprimir o log conforme especificado
+			log.Printf("\n______\nAtualizado:\nGrupo Anterior: %s\nNovo Grupo: %s\n______\n", previousGroup, newGroup)
+			continue
+		}
+
 		// Verificar se a mensagem veio do grupo especificado
 		if update.Message.Chat.ID == b.groupID {
 			// Responder à mensagem
@@ -69,15 +84,19 @@ func (b *Bot) Run() {
 			}
 		} else if update.Message.Chat.Type == "private" {
 			// Reencaminhar a mensagem para o grupo
-			forwardGroupIDStr := os.Getenv("TECH_PROMO_GROUP_ID")
+			forwardGroupIDStr := os.Getenv("PROMO_GROUP_ID")
 
 			// Converta o ID do grupo para int64
 			forwardGroupID, err := strconv.ParseInt(forwardGroupIDStr, 10, 64)
 			if err != nil {
-				log.Fatal("ID do grupo do Telegram inválido:", err)
+				log.Fatal("Invalid Telegram group ID:", err)
 			}
 
-			forwardMsg := tgbotapi.ForwardConfig{BaseChat: tgbotapi.BaseChat{ChatID: forwardGroupID}, FromChatID: update.Message.Chat.ID, MessageID: update.Message.MessageID}
+			forwardMsg := tgbotapi.ForwardConfig{
+				BaseChat:   tgbotapi.BaseChat{ChatID: forwardGroupID},
+				FromChatID: update.Message.Chat.ID,
+				MessageID:  update.Message.MessageID,
+			}
 			_, err = b.botAPI.Send(forwardMsg)
 			if err != nil {
 				log.Println(err)
