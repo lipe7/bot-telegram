@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -27,7 +28,6 @@ func NewBot(botToken string, groupID int64) (*Bot, error) {
 
 	// Obter informações sobre o grupo
 	chatConfig := tgbotapi.ChatConfig{ChatID: groupID}
-	log.Println("chatConfig: ", groupID)
 
 	chat, err := botAPI.GetChat(chatConfig)
 	if err != nil {
@@ -44,6 +44,8 @@ func NewBot(botToken string, groupID int64) (*Bot, error) {
 
 // Run inicia o bot e começa a lidar com as mensagens
 func (b *Bot) Run() {
+	serviceStartTime := time.Now()
+
 	// Configurar uma atualização para pegar mensagens
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -55,7 +57,7 @@ func (b *Bot) Run() {
 
 	// Loop pelas mensagens recebidas
 	for update := range updates {
-		if update.Message == nil {
+		if update.Message == nil || update.Message.Time().Before(serviceStartTime) {
 			continue
 		}
 
