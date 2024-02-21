@@ -3,15 +3,21 @@ module affiliate-ali-api
 go 1.21.6
 
 require (
-	github.com/dghubble/go-twitter v0.0.0-20221104224141-912508c3888b
-	github.com/dghubble/oauth1 v0.7.2
+	github.com/ChimeraCoder/anaconda v2.0.0+incompatible
 	github.com/joho/godotenv v1.5.1
 )
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
-	github.com/dghubble/sling v1.4.0 // indirect
+	github.com/ChimeraCoder/tokenbucket v0.0.0-20131201223612-c5a927568de7 // indirect
+	github.com/azr/backoff v0.0.0-20160115115103-53511d3c7330 // indirect
+	github.com/dustin/go-jsonpointer v0.0.0-20160814072949-ba0abeacc3dc // indirect
+	github.com/dustin/gojson v0.0.0-20160307161227-2e71ec9dd5ad // indirect
+	github.com/garyburd/go-oauth v0.0.0-20180319155456-bca2e7f09a17 // indirect
+	golang.org/x/net v0.21.0 // indirect
+)
+
+require (
+	github.com/dghubble/oauth1 v0.7.2
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
-	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 )
