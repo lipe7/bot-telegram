@@ -63,11 +63,11 @@ func NewTwitter(groupID int64) (*Twitter, error) {
 	}, nil
 }
 
-func Post(groupID int64) {
-	// Mapeamento explícito de PROMO_GROUP_ID para sufixo
+func Post(groupID int64, tweetMessage string) {
+	// os.Exit(0)// Mapeamento explícito de PROMO_GROUP_ID para sufixo
 	suffixMap := map[int64]string{
 		-1002114057976: "1",
-		2114057976:     "2",
+		-1002073907096: "2",
 		// Adicione mais mapeamentos conforme necessário
 	}
 
@@ -84,15 +84,20 @@ func Post(groupID int64) {
 	apiSecret := os.Getenv(apiSecretEnv)
 	accessToken := os.Getenv(accessTokenEnv)
 	accessSecret := os.Getenv(accessSecretEnv)
+	// fmt.Println("apiKey: ", apiKey)
+	// fmt.Println("apiSecret: ", apiSecret)
+	// fmt.Println("accessToken: ", accessToken)
+	// fmt.Println("accessSecret: ", accessSecret)
 
 	// Criar token OAuth1
 	config := oauth1.NewConfig(apiKey, apiSecret)
+	// fmt.Println("accessSecret: ", accessSecret)
 	token := oauth1.NewToken(accessToken, accessSecret)
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	// Endpoint e dados a serem postados
 	endpointURL := "https://api.twitter.com/2/tweets"
-	data := map[string]string{"text": "Hello World!"}
+	data := map[string]string{"text": tweetMessage}
 
 	// Codificar os dados em JSON
 	jsonData, err := json.Marshal(data)

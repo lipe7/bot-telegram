@@ -68,8 +68,7 @@ func (b *Bot) Run() {
 	}
 
 	// Criar o cliente do Twitter com o groupID
-	twitterClient, err := twitter.NewTwitter(groupID)
-	fmt.Fprintln(os.Stdout, []any{"Client do Twitter:", twitterClient}...)
+	twitter.NewTwitter(groupID)
 
 	// Verificar se houve um erro ao criar o cliente do Twitter
 	if err != nil {
@@ -93,6 +92,25 @@ func (b *Bot) Run() {
 
 			newGroup := os.Getenv("PROMO_GROUP_ID") // Obter o novo valor do env após atualizar
 
+			suffixMap := map[int64]string{
+				-1002114057976: "1",
+				-1002073907096: "2",
+				// Adicione mais mapeamentos conforme necessário
+			}
+
+			newGroupINT, err := strconv.ParseInt(newGroup, 10, 64)
+			if err != nil {
+				log.Fatalf("Erro ao converter ID do grupo para inteiro: %v", err)
+			}
+
+			suffix := suffixMap[newGroupINT]
+			groupNameEnv := fmt.Sprintf("GROUP_NAME_%s", suffix)
+			groupName := os.Getenv(groupNameEnv)
+			groupMsg := fmt.Sprintf("%s é o grupo configurado", groupName)
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, groupMsg)
+			b.botAPI.Send(msg)
+
 			// Imprimir o log conforme especificado
 			log.Printf("\n______\nAtualizado:\nGrupo Anterior: %s\nNovo Grupo: %s\n______\n", previousGroup, newGroup)
 			continue
@@ -108,35 +126,42 @@ func (b *Bot) Run() {
 			}
 		} else if update.Message.Chat.Type == "private" {
 			// Verificar se a mensagem contém uma foto
-			if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
-				// Se houver uma foto, obter a maior resolução disponível
-				photo := (*update.Message.Photo)[len(*update.Message.Photo)-1] // Pegue a última foto, que é a maior
-				photoURL := photo.FileID
+			// if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
+			// Se houver uma foto, obter a maior resolução disponível
+			// photo := (*update.Message.Photo)[len(*update.Message.Photo)-1] // Pegue a última foto, que é a maior
+			// photoURL := photo.FileID
 
-				// Construir a mensagem do tweet com a descrição da foto, se houver
-				var tweetMessage string
+			// Construir a mensagem do tweet com a descrição da foto, se houver
+			// var tweetMessage string
 
-				if update.Message.Caption != "" {
-					tweetMessage = update.Message.Caption + "\n" + photoURL
-				} else {
-					tweetMessage = photoURL // Corrigido: Se não houver legenda, defina a mensagem como a URL da foto
-				}
+			// if update.Message.Caption != "" {
+			// 	tweetMessage = update.Message.Caption + "\n" + photoURL
+			// } else {
+			// 	tweetMessage = photoURL // Corrigido: Se não houver legenda, defina a mensagem como a URL da foto
+			// }
 
-				// Postar o tweet no Twitter
-				err := twitterClient.PostTweet(b.groupID, tweetMessage, "tweetPhoto", "")
-				if err != nil {
-					log.Println("Erro ao postar no Twitter:", err)
-				}
+			// Postar o tweet no Twitter
+			// err := twitterClient.PostTweet(b.groupID, tweetMessage, "tweetPhoto", "")
+			// if err != nil {
+			// 	log.Println("Erro ao postar no Twitter:", err)
+			// }
+			// } else {
+			var tweetMessage string
+			if update.Message.Caption != "" {
+				tweetMessage = update.Message.Caption
 			} else {
-				promoGroupID := os.Getenv("PROMO_GROUP_ID")
-				promoGroupIDInt, err := strconv.ParseInt(promoGroupID, 10, 64)
-				if err != nil {
-					log.Printf("Erro ao converter PROMO_GROUP_ID para int64: %v", err)
-					// Trate o erro aqui, como apenas registrar um erro ou qualquer outra ação necessária
-				} else {
-					twitter.Post(promoGroupIDInt)
-				}
+				tweetMessage = update.Message.Text
 			}
+
+			promoGroupID := os.Getenv("PROMO_GROUP_ID")
+			promoGroupIDInt, err := strconv.ParseInt(promoGroupID, 10, 64)
+			if err != nil {
+				log.Printf("Erro ao converter PROMO_GROUP_ID para int64: %v", err)
+			} else {
+
+				twitter.Post(promoGroupIDInt, tweetMessage)
+			}
+			// }
 
 			// Reencaminhar a mensagem para o grupo
 			forwardGroupIDStr := os.Getenv("PROMO_GROUP_ID")
