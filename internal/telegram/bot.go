@@ -1,12 +1,13 @@
 package telegram
 
 import (
-	"affiliate-ali-api/internal/twitter"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"affiliate-ali-api/internal/twitter"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -55,25 +56,6 @@ func (b *Bot) Run() {
 	updates, err := b.botAPI.GetUpdatesChan(u)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// Criar uma nova instância do cliente do Twitter
-	promoGroupID := os.Getenv("PROMO_GROUP_ID")
-	groupID, err := strconv.ParseInt(promoGroupID, 10, 64)
-
-	// Verificar se houve um erro ao converter promoGroupID para int64
-	if err != nil {
-		log.Printf("Erro ao converter PROMO_GROUP_ID para int64: %v", err)
-		return
-	}
-
-	// Criar o cliente do Twitter com o groupID
-	twitter.NewTwitter(groupID)
-
-	// Verificar se houve um erro ao criar o cliente do Twitter
-	if err != nil {
-		log.Printf("Erro ao criar cliente do Twitter para o grupo %d: %v", groupID, err)
-		return
 	}
 
 	// Loop pelas mensagens recebidas
@@ -125,27 +107,41 @@ func (b *Bot) Run() {
 				log.Println(err)
 			}
 		} else if update.Message.Chat.Type == "private" {
-			// Verificar se a mensagem contém uma foto
-			// if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
-			// Se houver uma foto, obter a maior resolução disponível
-			// photo := (*update.Message.Photo)[len(*update.Message.Photo)-1] // Pegue a última foto, que é a maior
-			// photoURL := photo.FileID
+			// Reencaminhar a mensagem para o grupo
+			forwardGroupIDStr := os.Getenv("PROMO_GROUP_ID")
 
-			// Construir a mensagem do tweet com a descrição da foto, se houver
-			// var tweetMessage string
+			// Converta o ID do grupo para int64
+			forwardGroupID, err := strconv.ParseInt(forwardGroupIDStr, 10, 64)
+			if err != nil {
+				log.Fatal("Invalid Telegram group ID:", err)
+			}
 
-			// if update.Message.Caption != "" {
-			// 	tweetMessage = update.Message.Caption + "\n" + photoURL
-			// } else {
-			// 	tweetMessage = photoURL // Corrigido: Se não houver legenda, defina a mensagem como a URL da foto
-			// }
+			// Verificar se a mensagem contém uma imagem
+			if hasImage(update.Message) {
+				// Se houver uma imagem, obter a maior resolução disponível
+				photo := (*update.Message.Photo)[len(*update.Message.Photo)-1] // Pegue a última foto, que é a maior
+				photoID := photo.FileID
+				caption := update.Message.Caption
 
-			// Postar o tweet no Twitter
-			// err := twitterClient.PostTweet(b.groupID, tweetMessage, "tweetPhoto", "")
-			// if err != nil {
-			// 	log.Println("Erro ao postar no Twitter:", err)
-			// }
-			// } else {
+				// Criar a configuração para enviar a foto e a legenda para o outro grupo
+				forwardMsg := tgbotapi.NewPhotoShare(forwardGroupID, photoID)
+				forwardMsg.Caption = caption
+
+				// Enviar a foto e a legenda para o outro grupo
+				_, err := b.botAPI.Send(forwardMsg)
+				if err != nil {
+					log.Println("Erro ao enviar imagem para o outro grupo:", err)
+				}
+			} else {
+				// Se não houver imagem, postar o texto da mensagem
+				textMsg := tgbotapi.NewMessage(forwardGroupID, update.Message.Text)
+				_, err := b.botAPI.Send(textMsg)
+				if err != nil {
+					log.Println("Erro ao postar mensagem de texto:", err)
+				}
+			}
+
+			// Postar a mensagem no Twitter
 			var tweetMessage string
 			if update.Message.Caption != "" {
 				tweetMessage = update.Message.Caption
@@ -157,30 +153,15 @@ func (b *Bot) Run() {
 			promoGroupIDInt, err := strconv.ParseInt(promoGroupID, 10, 64)
 			if err != nil {
 				log.Printf("Erro ao converter PROMO_GROUP_ID para int64: %v", err)
-			} else {
-
-				twitter.Post(promoGroupIDInt, tweetMessage)
-			}
-			// }
-
-			// Reencaminhar a mensagem para o grupo
-			forwardGroupIDStr := os.Getenv("PROMO_GROUP_ID")
-
-			// Converta o ID do grupo para int64
-			forwardGroupID, err := strconv.ParseInt(forwardGroupIDStr, 10, 64)
-			if err != nil {
-				log.Fatal("Invalid Telegram group ID:", err)
+				return
 			}
 
-			forwardMsg := tgbotapi.ForwardConfig{
-				BaseChat:   tgbotapi.BaseChat{ChatID: forwardGroupID},
-				FromChatID: update.Message.Chat.ID,
-				MessageID:  update.Message.MessageID,
-			}
-			_, err = b.botAPI.Send(forwardMsg)
-			if err != nil {
-				log.Println(err)
-			}
+			twitter.Post(promoGroupIDInt, tweetMessage)
 		}
 	}
+}
+
+// Função auxiliar para verificar se a mensagem contém uma imagem
+func hasImage(msg *tgbotapi.Message) bool {
+	return msg.Photo != nil && len(*msg.Photo) > 0
 }
