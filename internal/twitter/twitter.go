@@ -19,7 +19,7 @@ type Twitter struct {
 func NewTwitter(promoGroupID string) (*Twitter, error) {
 	groupID, err := strconv.ParseInt(promoGroupID, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao converter PROMO_GROUP_ID para int64: %v", err)
+		return nil, fmt.Errorf("erro ao converter GROUP_ID para int64: %v", err)
 	}
 
 	apiKey := os.Getenv("TWITTER_API_KEY")
