@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"affiliate-ali-api/internal/common"
@@ -52,12 +53,17 @@ func (b *Bot) Run() {
 	}
 
 	for update := range updates {
-		if update.Message == nil || update.Message.Time().Before(serviceStartTime) {
+		if update.Message.IsCommand() {
+			handleCommand(b, update.Message)
 			continue
 		}
 
-		if update.Message.IsCommand() {
-			handleCommand(b, update.Message)
+		if !isAuthenticated(update.Message.From.ID) {
+			authenticateUser(b, update.Message.From.ID, update.Message.Text)
+			continue
+		}
+
+		if update.Message == nil || update.Message.Time().Before(serviceStartTime) {
 			continue
 		}
 
@@ -75,6 +81,26 @@ func (b *Bot) Run() {
 }
 
 func handleCommand(b *Bot, message *tgbotapi.Message) {
+	if message.Command() == "start" {
+		// Verifica se o usuário já está autenticado
+		if !isAuthenticated(message.From.ID) {
+			// Solicita ao usuário que insira o código de autenticação
+			userIDStr := strconv.Itoa(message.From.ID)
+			userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+			if err != nil {
+				log.Printf("Erro ao converter userID para int64: %v", err)
+				return
+			}
+
+			authMsg := tgbotapi.NewMessage(userIDInt, "Por favor, insira o código de autenticação:")
+			_, err = b.botAPI.Send(authMsg)
+			if err != nil {
+				log.Printf("Erro ao enviar mensagem de autenticação: %v", err)
+			}
+			return
+		}
+	}
+
 	previousGroup := os.Getenv("PROMO_GROUP_ID")
 	commandWithPrefix := "-100" + message.CommandWithAt()
 	os.Setenv("PROMO_GROUP_ID", commandWithPrefix)
@@ -102,6 +128,23 @@ func handleCommand(b *Bot, message *tgbotapi.Message) {
 }
 
 func handlePrivateMessage(b *Bot, message *tgbotapi.Message) {
+	if !isAuthenticated(message.From.ID) {
+		userIDStr := strconv.Itoa(message.From.ID)
+		userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			log.Printf("Erro ao converter userID para int64: %v", err)
+			return
+		}
+
+		// Usuário não autenticado, ignorar a mensagem
+		authMsg := tgbotapi.NewMessage(userIDInt, "Usuário não autenticado, por favor, insira o código de autenticação:")
+		_, err = b.botAPI.Send(authMsg)
+		if err != nil {
+			log.Printf("Erro ao enviar mensagem de autenticação: %v", err)
+		}
+		return
+	}
+
 	forwardGroupIDStr := os.Getenv("PROMO_GROUP_ID")
 
 	forwardGroupID, err := strconv.ParseInt(forwardGroupIDStr, 10, 64)
@@ -148,4 +191,44 @@ func handlePrivateMessage(b *Bot, message *tgbotapi.Message) {
 
 func hasImage(msg *tgbotapi.Message) bool {
 	return msg.Photo != nil && len(*msg.Photo) > 0
+}
+
+func isAuthenticated(userID int) bool {
+	// Verificar se o userID está na lista de usuários autenticados
+	authenticatedUsers := os.Getenv("AUTHENTICATED_USERS")
+	return strings.Contains(authenticatedUsers, strconv.Itoa(userID))
+}
+
+func authenticateUser(b *Bot, userID int, authCode string) {
+	userIDStr := strconv.Itoa(userID)
+	userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		log.Printf("Erro ao converter userID para int64: %v", err)
+		return
+	}
+
+	envAuthCode := os.Getenv("AUTH_CODE")
+	envAuthCode = strings.TrimSpace(envAuthCode)
+	if authCode != envAuthCode {
+		// Código de autenticação incorreto, enviar mensagem informando
+		errorMsg := "Código de autenticação incorreto. Por favor, tente novamente."
+		errMsg := tgbotapi.NewMessage(userIDInt, errorMsg)
+		_, err := b.botAPI.Send(errMsg)
+		if err != nil {
+			log.Printf("Erro ao enviar mensagem de erro de autenticação: %v", err)
+		}
+		return
+	}
+
+	// Adicionar o ID do usuário à lista de usuários autenticados
+	authenticatedUsers := os.Getenv("AUTHENTICATED_USERS")
+	authenticatedUsers += strconv.Itoa(userID) + ","
+	os.Setenv("AUTHENTICATED_USERS", authenticatedUsers)
+
+	// Solicitar ao usuário que insira o código de autenticação
+	authMsg := tgbotapi.NewMessage(userIDInt, "Autenticado com sucesso.")
+	_, err = b.botAPI.Send(authMsg)
+	if err != nil {
+		log.Printf("Erro ao enviar mensagem de autenticação: %v", err)
+	}
 }
