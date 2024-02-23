@@ -118,7 +118,7 @@ func handlePrivateMessage(b *Bot, message *tgbotapi.Message) {
 		return
 	}
 
-	forwardGroupIDStr := os.Getenv("PROMO_GROUP_ID")
+	forwardGroupIDStr := os.Getenv("GROUP_ID")
 
 	forwardGroupID, err := strconv.ParseInt(forwardGroupIDStr, 10, 64)
 	if err != nil {
@@ -152,10 +152,10 @@ func handlePrivateMessage(b *Bot, message *tgbotapi.Message) {
 		tweetMessage = message.Text
 	}
 
-	promoGroupID := os.Getenv("PROMO_GROUP_ID")
+	promoGroupID := os.Getenv("GROUP_ID")
 	promoGroupIDInt, err := strconv.ParseInt(promoGroupID, 10, 64)
 	if err != nil {
-		log.Printf("Erro ao converter PROMO_GROUP_ID para int64: %v", err)
+		log.Printf("Erro ao converter GROUP_ID para int64: %v", err)
 		return
 	}
 
