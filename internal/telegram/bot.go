@@ -1,14 +1,12 @@
 package telegram
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"affiliate-ali-api/internal/common"
 	"affiliate-ali-api/internal/twitter"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -100,31 +98,6 @@ func handleCommand(b *Bot, message *tgbotapi.Message) {
 			return
 		}
 	}
-
-	previousGroup := os.Getenv("PROMO_GROUP_ID")
-	commandWithPrefix := "-100" + message.CommandWithAt()
-	os.Setenv("PROMO_GROUP_ID", commandWithPrefix)
-	newGroup := os.Getenv("PROMO_GROUP_ID")
-
-	newGroupINT, err := strconv.ParseInt(newGroup, 10, 64)
-	if err != nil {
-		log.Fatalf("Erro ao converter ID do grupo para inteiro: %v", err)
-	}
-
-	suffix, err := common.GetGroupSuffix(newGroupINT)
-	if err != nil {
-		log.Println("Erro ao obter sufixo:", err)
-		return
-	}
-
-	groupNameEnv := fmt.Sprintf("GROUP_NAME_%s", suffix)
-	groupName := os.Getenv(groupNameEnv)
-	groupMsg := fmt.Sprintf("%s é o grupo configurado", groupName)
-
-	msg := tgbotapi.NewMessage(message.Chat.ID, groupMsg)
-	b.botAPI.Send(msg)
-
-	log.Printf("\n______\nAtualizado:\nGrupo Anterior: %s\nNovo Grupo: %s\n______\n", previousGroup, newGroup)
 }
 
 func handlePrivateMessage(b *Bot, message *tgbotapi.Message) {

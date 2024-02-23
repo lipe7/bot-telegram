@@ -1,11 +1,9 @@
 package twitter
 
 import (
-	"affiliate-ali-api/internal/common"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -24,21 +22,10 @@ func NewTwitter(promoGroupID string) (*Twitter, error) {
 		return nil, fmt.Errorf("erro ao converter PROMO_GROUP_ID para int64: %v", err)
 	}
 
-	suffix, err := common.GetGroupSuffix(groupID)
-	if err != nil {
-		log.Println("Erro ao obter sufixo:", err)
-		return nil, err
-	}
-
-	apiKeyEnv := fmt.Sprintf("TWITTER_API_KEY_%s", suffix)
-	apiSecretEnv := fmt.Sprintf("TWITTER_API_SECRET_KEY_%s", suffix)
-	accessTokenEnv := fmt.Sprintf("TWITTER_ACCESS_TOKEN_%s", suffix)
-	accessSecretEnv := fmt.Sprintf("TWITTER_ACCESS_TOKEN_SECRET_%s", suffix)
-
-	apiKey := os.Getenv(apiKeyEnv)
-	apiSecret := os.Getenv(apiSecretEnv)
-	accessToken := os.Getenv(accessTokenEnv)
-	accessSecret := os.Getenv(accessSecretEnv)
+	apiKey := os.Getenv("TWITTER_API_KEY")
+	apiSecret := os.Getenv("TWITTER_API_SECRET_KEY")
+	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
+	accessSecret := os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
 	if apiKey == "" || apiSecret == "" || accessToken == "" || accessSecret == "" {
 		return nil, fmt.Errorf("credenciais incompletas fornecidas para o grupo %d", groupID)
@@ -52,22 +39,16 @@ func NewTwitter(promoGroupID string) (*Twitter, error) {
 }
 
 func Post(groupID int64, tweetMessage string) {
-	suffix, err := common.GetGroupSuffix(groupID)
-	if err != nil {
-		log.Println("Erro ao obter sufixo:", err)
-		return
-	}
-
-	apiKeyEnv := fmt.Sprintf("TWITTER_API_KEY_%s", suffix)
-	apiSecretEnv := fmt.Sprintf("TWITTER_API_SECRET_KEY_%s", suffix)
-	accessTokenEnv := fmt.Sprintf("TWITTER_ACCESS_TOKEN_%s", suffix)
-	accessSecretEnv := fmt.Sprintf("TWITTER_ACCESS_TOKEN_SECRET_%s", suffix)
-
-	apiKey := os.Getenv(apiKeyEnv)
-	apiSecret := os.Getenv(apiSecretEnv)
-	accessToken := os.Getenv(accessTokenEnv)
-	accessSecret := os.Getenv(accessSecretEnv)
-
+	apiKey := os.Getenv("TWITTER_API_KEY")
+	apiSecret := os.Getenv("TWITTER_API_SECRET_KEY")
+	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
+	accessSecret := os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
+	fmt.Print("\n")
+	fmt.Print("\n apiKey", apiKey)
+	fmt.Print("\n apiSecret", apiSecret)
+	fmt.Print("\n accessToken", accessToken)
+	fmt.Print("\n accessSecret", accessSecret)
+	fmt.Print("\n")
 	config := oauth1.NewConfig(apiKey, apiSecret)
 	token := oauth1.NewToken(accessToken, accessSecret)
 	httpClient := config.Client(oauth1.NoContext, token)
