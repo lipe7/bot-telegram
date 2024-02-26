@@ -4,13 +4,19 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 
 	telegram "affiliate-ali-api/internal/telegram"
 
 	"github.com/joho/godotenv"
 )
 
+var mutex = &sync.Mutex{}
+
 func main() {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Erro ao carregar o arquivo .env:", err)
