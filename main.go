@@ -4,10 +4,16 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 
 	telegram "affiliate-ali-api/internal/telegram"
 
 	"github.com/joho/godotenv"
+)
+
+var (
+	activeBot *telegram.Bot
+	botMutex  sync.Mutex
 )
 
 func main() {
@@ -28,10 +34,20 @@ func main() {
 		log.Fatal("ID do grupo do Telegram inválido:", err)
 	}
 
-	bot, err := telegram.NewBot(botToken, groupID)
-	if err != nil {
-		log.Fatal(err)
+	// Verifica se já existe um bot ativo
+	if activeBot == nil {
+		// Se não houver um bot ativo, crie um novo
+		botMutex.Lock()
+		defer botMutex.Unlock()
+		if activeBot == nil {
+			bot, err := telegram.NewBot(botToken, groupID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			activeBot = bot
+		}
 	}
 
-	bot.Run()
+	// Use o bot ativo
+	activeBot.Run()
 }
