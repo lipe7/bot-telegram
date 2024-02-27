@@ -67,7 +67,12 @@ func NewBot(botToken string, groupID int64) (*Bot, error) {
 }
 
 func (b *Bot) Run() {
-	http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	// Inicie o servidor HTTP em uma goroutine separada
+	go func() {
+		if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	serviceStartTime := time.Now()
 
 	u := tgbotapi.NewUpdate(0)
