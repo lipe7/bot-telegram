@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	telegram "affiliate-ali-api/internal/telegram"
 
@@ -14,9 +15,6 @@ import (
 var mutex = &sync.Mutex{}
 
 func main() {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Erro ao carregar o arquivo .env:", err)
@@ -39,5 +37,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bot.Run()
+	// Canal para sinalizar a interrupção
+	interrupt := make(chan struct{})
+
+	// Inicie o bot em uma gorrotina
+	go func() {
+		for {
+			select {
+			case <-interrupt:
+				return
+			default:
+				// Executar o bot
+				bot.Run()
+
+				// Aguardar antes de tentar novamente
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}()
+
+	// Aguarde uma interrupção
+	<-interrupt
 }
