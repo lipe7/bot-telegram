@@ -4,20 +4,13 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"sync"
 
 	telegram "affiliate-ali-api/internal/telegram"
 
 	"github.com/joho/godotenv"
 )
 
-var (
-	activeBot *telegram.Bot
-	botMutex  sync.Mutex
-)
-
 func main() {
-	// Carrega as configurações do arquivo .env
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Erro ao carregar o arquivo .env:", err)
@@ -35,23 +28,10 @@ func main() {
 		log.Fatal("ID do grupo do Telegram inválido:", err)
 	}
 
-	// Verifica se já existe uma instância do bot ativa
-	if activeBot == nil {
-		// Se não houver uma instância ativa, cria uma
-		botMutex.Lock()
-		defer botMutex.Unlock()
-		if activeBot == nil {
-			bot, err := telegram.NewBot(botToken, groupID)
-			if err != nil {
-				log.Fatal(err)
-			}
-			activeBot = bot
-
-			// Inicia o bot em uma goroutine separada
-			go activeBot.Run()
-		}
+	bot, err := telegram.NewBot(botToken, groupID)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Aguarda indefinidamente
-	select {}
+	bot.Run()
 }

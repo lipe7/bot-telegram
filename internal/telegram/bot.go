@@ -17,7 +17,15 @@ type Bot struct {
 	groupID int64
 }
 
+var activeBots map[string]*Bot = make(map[string]*Bot)
+
 func NewBot(botToken string, groupID int64) (*Bot, error) {
+	// Verificar se já existe uma instância ativa com o mesmo botToken
+	if existingBot, ok := activeBots[botToken]; ok {
+		log.Printf("Utilizando instância existente do bot com o token %s", botToken)
+		return existingBot, nil
+	}
+
 	botAPI, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
 		return nil, err
@@ -33,10 +41,14 @@ func NewBot(botToken string, groupID int64) (*Bot, error) {
 
 	log.Printf("Bot iniciado como %s no grupo %s", botAPI.Self.UserName, chat.Title)
 
-	return &Bot{
+	// Criar nova instância do bot e adicionar ao mapa de bots ativos
+	newBot := &Bot{
 		botAPI:  botAPI,
 		groupID: groupID,
-	}, nil
+	}
+	activeBots[botToken] = newBot
+
+	return newBot, nil
 }
 
 func (b *Bot) Run() {
