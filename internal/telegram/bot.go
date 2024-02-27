@@ -24,7 +24,7 @@ var (
 	activeBots map[string]*Bot
 	// Mutex para sincronização de acesso ao mapa de instâncias ativas
 	botMutex sync.Mutex
-	port     = 8080
+	port     = 10000
 )
 
 func init() {
