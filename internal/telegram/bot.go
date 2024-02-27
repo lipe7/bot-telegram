@@ -44,6 +44,7 @@ func (b *Bot) Run() {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
+	time.Sleep(time.Second * 5)
 
 	updates, err := b.botAPI.GetUpdatesChan(u)
 	if err != nil {
