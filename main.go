@@ -17,6 +17,7 @@ var (
 )
 
 func main() {
+	// Carrega as configurações do arquivo .env
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Erro ao carregar o arquivo .env:", err)
@@ -34,9 +35,9 @@ func main() {
 		log.Fatal("ID do grupo do Telegram inválido:", err)
 	}
 
-	// Verifica se já existe um bot ativo
+	// Verifica se já existe uma instância do bot ativa
 	if activeBot == nil {
-		// Se não houver um bot ativo, crie um novo
+		// Se não houver uma instância ativa, cria uma
 		botMutex.Lock()
 		defer botMutex.Unlock()
 		if activeBot == nil {
@@ -45,9 +46,12 @@ func main() {
 				log.Fatal(err)
 			}
 			activeBot = bot
+
+			// Inicia o bot em uma goroutine separada
+			go activeBot.Run()
 		}
 	}
 
-	// Use o bot ativo
-	activeBot.Run()
+	// Aguarda indefinidamente
+	select {}
 }
