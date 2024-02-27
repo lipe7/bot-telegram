@@ -2,9 +2,11 @@ package telegram
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"affiliate-ali-api/internal/twitter"
@@ -17,10 +19,23 @@ type Bot struct {
 	groupID int64
 }
 
-var activeBots map[string]*Bot = make(map[string]*Bot)
+var (
+	// Mapa para rastrear instâncias ativas do bot
+	activeBots map[string]*Bot
+	// Mutex para sincronização de acesso ao mapa de instâncias ativas
+	botMutex sync.Mutex
+	port     = 8080
+)
+
+func init() {
+	activeBots = make(map[string]*Bot)
+}
 
 func NewBot(botToken string, groupID int64) (*Bot, error) {
-	// Verificar se já existe uma instância ativa com o mesmo botToken
+	botMutex.Lock()
+	defer botMutex.Unlock()
+
+	// Verifica se já existe uma instância ativa com o mesmo botToken
 	if existingBot, ok := activeBots[botToken]; ok {
 		log.Printf("Utilizando instância existente do bot com o token %s", botToken)
 		return existingBot, nil
@@ -52,6 +67,7 @@ func NewBot(botToken string, groupID int64) (*Bot, error) {
 }
 
 func (b *Bot) Run() {
+	http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	serviceStartTime := time.Now()
 
 	u := tgbotapi.NewUpdate(0)
